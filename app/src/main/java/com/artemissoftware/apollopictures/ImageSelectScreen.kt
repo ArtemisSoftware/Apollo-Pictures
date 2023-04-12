@@ -15,10 +15,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 
 @Composable
 fun ImageSelectScreen() {
+    val context = LocalContext.current
+
+    val coroutine = rememberCoroutineScope()
+
     var selectedImageUri by remember {
         mutableStateOf<Uri?>(null)
     }
@@ -27,7 +33,22 @@ fun ImageSelectScreen() {
     }
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> selectedImageUri = uri },
+        onResult = { uri ->
+
+            uri?.let {
+                context.contentResolver.openInputStream(it)?.let { inputStream ->
+
+                    coroutine.launch {
+                        val size: Int = inputStream.available() ?: 0
+                        inputStream.close()
+
+                        if (size < 1048576) {
+                            selectedImageUri = uri
+                        }
+                    }
+                }
+            }
+        },
     )
     val multiplePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(),
