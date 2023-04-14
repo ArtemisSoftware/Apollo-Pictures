@@ -1,5 +1,7 @@
 package com.artemissoftware.apollopictures
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -18,6 +20,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.text.DecimalFormat
 
 @Composable
 fun ImageSelectScreen() {
@@ -34,11 +39,22 @@ fun ImageSelectScreen() {
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
+            coroutine.launch {
+                uri?.let {
 
-            uri?.let {
-                context.contentResolver.openInputStream(it)?.let { inputStream ->
+                    val bytes = context.contentResolver.openInputStream(uri)?.use {
+                        it.readBytes()
+                    } ?: byteArrayOf()
+                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
 
-                    coroutine.launch {
+
+                    val outputStream = ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream) // TODO: Test different compression settings
+                    val compressed = outputStream.toByteArray()
+
+
+                    context.contentResolver.openInputStream(it)?.let { inputStream ->
+
                         val size: Int = inputStream.available() ?: 0
                         inputStream.close()
 
@@ -99,4 +115,11 @@ fun ImageSelectScreen() {
             )
         }
     }
+}
+
+fun readableFileSize(size: Long): String {
+    if (size <= 0) return "0 B"
+    val units = arrayOf("B", "KB", "MB", "GB", "TB")
+    val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
+    return DecimalFormat("#,##0.#").format(size / Math.pow(1024.0, digitGroups.toDouble())) + " " + units[digitGroups]
 }
