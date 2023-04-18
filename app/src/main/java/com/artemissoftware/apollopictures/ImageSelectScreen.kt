@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
-import java.io.File
+import java.net.URI
 import java.text.DecimalFormat
 
 @Composable
@@ -42,16 +42,21 @@ fun ImageSelectScreen() {
             coroutine.launch {
                 uri?.let {
 
+
+                    val string = uri.toString()
+                    val uristring: Uri = Uri.parse(string)
+
+
+
+
                     val bytes = context.contentResolver.openInputStream(uri)?.use {
                         it.readBytes()
                     } ?: byteArrayOf()
                     val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
 
-
                     val outputStream = ByteArrayOutputStream()
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream) // TODO: Test different compression settings
                     val compressed = outputStream.toByteArray()
-
 
                     context.contentResolver.openInputStream(it)?.let { inputStream ->
 
@@ -59,7 +64,7 @@ fun ImageSelectScreen() {
                         inputStream.close()
 
                         if (size < 1048576) {
-                            selectedImageUri = uri
+                            selectedImageUri = uristring
                         }
                     }
                 }
